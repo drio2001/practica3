@@ -11,25 +11,25 @@ import (
 // =======================
 
 type FaseTaller struct {
-	slots     chan struct{}
+	cupos     chan struct{}
 	maxCola   int
 	enCola    int
 	maxEnCola int
 	mu        sync.RWMutex
-	logger    *Logger
+	registro  *Registro
 	faseID    Fase
 	cfg       Config
 	rnd       *rand.Rand
 }
 
-func NuevaFase(faseID Fase, capacidad int, maxCola int, cfg Config, logger *Logger, rnd *rand.Rand) *FaseTaller {
+func NuevaFase(faseID Fase, capacidad int, maxCola int, cfg Config, registro *Registro, rnd *rand.Rand) *FaseTaller {
 	return &FaseTaller{
-		slots:   make(chan struct{}, capacidad),
-		maxCola: maxCola,
-		logger:  logger,
-		faseID:  faseID,
-		cfg:     cfg,
-		rnd:     rnd,
+		cupos:    make(chan struct{}, capacidad),
+		maxCola:  maxCola,
+		registro: registro,
+		faseID:   faseID,
+		cfg:      cfg,
+		rnd:      rnd,
 	}
 }
 
@@ -48,22 +48,22 @@ func (f *FaseTaller) Entrar(c Coche) func() {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	f.slots <- struct{}{}
+	f.cupos <- struct{}{}
 	f.mu.Lock()
 	f.enCola--
 	f.mu.Unlock()
 
-	f.logger.Log(c, f.faseID, "ENTRA")
+	f.registro.Log(c, f.faseID, "ENTRA")
 
 	return func() {
-		f.logger.Log(c, f.faseID, "SALE")
-		<-f.slots
+		f.registro.Log(c, f.faseID, "SALE")
+		<-f.cupos
 	}
 }
 
 func (f *FaseTaller) Trabajar(c Coche) {
-	base := baseDurationForCat(f.cfg, c.Categoria)
-	time.Sleep(variedDuration(base, f.cfg, f.rnd))
+	base := duracionBaseSegunCategoria(f.cfg, c.Categoria)
+	time.Sleep(duracionVariable(base, f.cfg))
 }
 
 // =======================
@@ -76,25 +76,25 @@ func RunSimulationRWMutex(cfg Config, logs bool) Stats {
 		seed = time.Now().UnixNano()
 	}
 	rnd := rand.New(rand.NewSource(seed))
-	logger := NewLogger(logs)
+	registro := NuevoRegistro(logs)
 
-	f1 := NuevaFase(FaseLlegada, cfg.NumPlazas, cfg.MaxColaFase1, cfg, logger, rnd)
-	f2 := NuevaFase(FaseMecanico, cfg.NumMecanicos, cfg.MaxColaFase2, cfg, logger, rnd)
-	f3 := NuevaFase(FaseLimpieza, cfg.NumPlazas, cfg.MaxColaFase3, cfg, logger, rnd)
-	f4 := NuevaFase(FaseEntrega, cfg.NumPlazas, cfg.MaxColaFase4, cfg, logger, rnd)
+	f1 := NuevaFase(FaseLlegada, cfg.NumPlazas, cfg.MaxColaFase1, cfg, registro, rnd)
+	f2 := NuevaFase(FaseMecanico, cfg.NumMecanicos, cfg.MaxColaFase2, cfg, registro, rnd)
+	f3 := NuevaFase(FaseLimpieza, cfg.NumPlazas, cfg.MaxColaFase3, cfg, registro, rnd)
+	f4 := NuevaFase(FaseEntrega, cfg.NumPlazas, cfg.MaxColaFase4, cfg, registro, rnd)
 
 	var coches []Coche
 	id := 1
 	for i := 0; i < cfg.CochesA; i++ {
-		coches = append(coches, Coche{id, CatA, incidenciaFromCat(CatA)})
+		coches = append(coches, Coche{id, CatA, incidenciaSegunCategoria(CatA)})
 		id++
 	}
 	for i := 0; i < cfg.CochesB; i++ {
-		coches = append(coches, Coche{id, CatB, incidenciaFromCat(CatB)})
+		coches = append(coches, Coche{id, CatB, incidenciaSegunCategoria(CatB)})
 		id++
 	}
 	for i := 0; i < cfg.CochesC; i++ {
-		coches = append(coches, Coche{id, CatC, incidenciaFromCat(CatC)})
+		coches = append(coches, Coche{id, CatC, incidenciaSegunCategoria(CatC)})
 		id++
 	}
 

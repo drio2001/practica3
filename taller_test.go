@@ -20,7 +20,7 @@ func baseConfig() Config {
 	}
 }
 
-func TestCaso1(t *testing.T) {
+func TestCaso1_Equitativo(t *testing.T) {
 	cfg := baseConfig()
 	cfg.CochesA = 10
 	cfg.CochesB = 10
@@ -30,22 +30,22 @@ func TestCaso1(t *testing.T) {
 	t.Logf("Caso 1 -> %v", stats.Duracion)
 }
 
-func TestCaso2(t *testing.T) {
+func TestCaso2_Desigual_Mecanica(t *testing.T) {
 	cfg := baseConfig()
 	cfg.CochesA = 20
 	cfg.CochesB = 5
 	cfg.CochesC = 5
 
-	stats := RunSimulationRWMutex(cfg, false)
+	stats := RunSimulationRWMutex(cfg, true)
 	t.Logf("Caso 2 -> %v", stats.Duracion)
 }
 
-func TestCaso3(t *testing.T) {
+func TestCaso3_Desigual_Carroceria(t *testing.T) {
 	cfg := baseConfig()
 	cfg.CochesA = 5
 	cfg.CochesB = 5
 	cfg.CochesC = 20
 
-	stats := RunSimulationRWMutex(cfg, false)
+	stats := RunSimulationRWMutex(cfg, true)
 	t.Logf("Caso 3 -> %v", stats.Duracion)
 }
